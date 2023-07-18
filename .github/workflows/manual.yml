@@ -4,7 +4,7 @@ on:
     inputs:
       update:
         description: 'Update Kernel Source'
-        required: true
+        required: false
 
 jobs:
   update:
@@ -34,12 +34,13 @@ jobs:
             echo "Update available. Current version: $current_version, Latest version: $latest_version"
             echo "::set-output name=update_available::true"
           fi
+      
       - name: Update repository
         if: steps.compare_versions.outputs.update_available == 'true'
         run: |
           git config --global user.name "donVito007"
           git config --global user.email "frditc@gmail.com"
-          git remote add origin https://github.com/donvito007/KernelSU_Thyme_SoundBeast.git
+          git remote set-url origin https://github.com/donvito007/KernelSU_Thyme_SoundBeast.git
           git fetch origin
           git checkout master
           git merge upstream/master
