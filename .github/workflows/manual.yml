@@ -1,32 +1,31 @@
 name: Update Kernel Source
 on:
   workflow_dispatch:
-    inputs:
-      update:
-        description: 'Update Kernel Source'
-        required: false
 
 jobs:
   update:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
-      - name: Check latest linux-stable version
-        id: check_version
+      - name: Install dependencies
         run: |
-          latest_version=$(curl -s https://www.kernel.org/releases.json | jq -r '.latest_stable.version')
-          echo "::set-output name=version::$latest_version"
+          sudo apt-get update
+          sudo apt-get install -y git jq
+
+      - name: Get latest Linux stable version
+        run: |
+          latest_version=$(curl -sL "https://www.kernel.org/releases.json" | jq -r '.[] | select(.moniker | contains("linux-stable")) | .version' | head -n 1)
+          echo "::set-output name=latest_version::$latest_version"
 
       - name: Compare versions
         id: compare_versions
         run: |
-          current_version=$(awk -F= '/^VERSION/ {gsub(/"/, "", $2); print $2}' Makefile)
-          latest_version=${{ steps.check_version.outputs.version }}
+          current_version=$(grep -Po '^VERSION = "\K[^"]+' Makefile)
+          latest_version=${{ steps.compare_versions.outputs.latest_version }}
+
           if [[ "$current_version" == "$latest_version" ]]; then
             echo "No update available. Current version: $current_version"
             echo "::set-output name=update_available::false"
@@ -34,18 +33,18 @@ jobs:
             echo "Update available. Current version: $current_version, Latest version: $latest_version"
             echo "::set-output name=update_available::true"
           fi
-      
+
       - name: Update repository
         if: steps.compare_versions.outputs.update_available == 'true'
         run: |
           git config --global user.name "donVito007"
           git config --global user.email "frditc@gmail.com"
+
           git remote set-url origin https://github.com/donvito007/KernelSU_Thyme_SoundBeast.git
           git fetch origin
-          git checkout main
+          git checkout ${{ github.ref }}
           git merge upstream/main
-          git push --quiet origin main
+          git push --quiet origin ${{ github.ref }}
+
         env:
           GH_TOKEN: ${{ secrets.Local }}
-
-      
