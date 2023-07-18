@@ -26,4 +26,20 @@ jobs:
           latest_version=${{ steps.check_version.outputs.version }}
           if [[ "$current_version" == "$latest_version" ]]; then
             echo "No update available. Current version: $current_version"
-            echo "::set
+            echo "::set-output name=update_available::false"
+          else
+            echo "Update available. Current version: $current_version, Latest version: $latest_version"
+            echo "::set-output name=update_available::true"
+          fi
+
+      - name: Update repository
+        if: steps.compare_versions.outputs.update_available == 'true'
+        run: |
+          git config --global user.name "donVito007"
+          git config --global user.email "frditc@gmail.com"
+
+          git remote add upstream https://github.com/torvalds/linux.git
+          git fetch upstream
+          git checkout master
+          git merge upstream/master
+          git push origin master
