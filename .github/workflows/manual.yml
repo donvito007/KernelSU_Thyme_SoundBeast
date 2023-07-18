@@ -12,6 +12,10 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
 
       - name: Check latest linux-stable version
         id: check_version
