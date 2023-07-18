@@ -12,10 +12,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install -y jq
-
 
       - name: Check latest linux-stable version
         id: check_version
@@ -26,7 +25,7 @@ jobs:
       - name: Compare versions
         id: compare_versions
         run: |
-          current_version=$(grep -Po '^VERSION = "\K[^"]+' Makefile)
+          current_version=$(awk -F= '/^VERSION/ {gsub(/"/, "", $2); print $2}' Makefile)
           latest_version=${{ steps.check_version.outputs.version }}
           if [[ "$current_version" == "$latest_version" ]]; then
             echo "No update available. Current version: $current_version"
