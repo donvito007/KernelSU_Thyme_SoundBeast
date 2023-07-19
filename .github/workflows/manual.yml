@@ -23,7 +23,7 @@ jobs:
       - name: Compare versions
         id: compare_versions
         run: |
-          current_version=$(grep -Po '^VERSION = "\K[^"]+' Makefile)
+          current_version=$(sed -n 's/VERSION = "\(.*\)"/\1/p' Makefile)
           latest_version=${{ steps.compare_versions.outputs.latest_version }}
 
           if [[ "$current_version" == "$latest_version" ]]; then
