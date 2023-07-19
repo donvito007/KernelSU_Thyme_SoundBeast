@@ -42,9 +42,9 @@ jobs:
 
           git remote set-url origin https://github.com/donvito007/KernelSU_Thyme_SoundBeast.git
           git fetch origin
-          git checkout ${{ github.ref }}
+          git checkout main  # Replace with your branch name
           git merge upstream/main
-          git push --quiet origin ${{ github.ref }}
+          git push --quiet origin main  # Replace with your branch name
 
         env:
           GH_TOKEN: ${{ secrets.Local }}
