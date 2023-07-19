@@ -36,15 +36,10 @@ jobs:
 
       - name: Update repository
         if: steps.compare_versions.outputs.update_available == 'true'
-        run: |
-          git config --global user.name "donVito007"
-          git config --global user.email "frditc@gmail.com"
-
-          git remote set-url origin https://github.com/donvito007/KernelSU_Thyme_SoundBeast.git
-          git fetch origin
-          git checkout main  # Replace with your branch name
-          git merge upstream/main
-          git push --quiet origin main  # Replace with your branch name
+        uses: donvito007/update-repo-action@v1
+        with:
+          repository: donvito007/KernelSU_Thyme_SoundBeast
+          branch: main  # Replace with your branch name
 
         env:
           GH_TOKEN: ${{ secrets.Local }}
