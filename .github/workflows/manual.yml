@@ -1,31 +1,33 @@
 name: Update Kernel Source
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 0" # Run every Sunday at midnight (UTC)
 
 jobs:
   update:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install dependencies
+      - name: Set up Git
         run: |
-          sudo apt-get update
-          sudo apt-get install -y git jq
+          git config --global user.name "donVito007"
+          git config --global user.email "frditc@gmail.com"
+          git remote set-url origin https://github.com/donvito007/KernelSU_Thyme_SoundBeast.git
 
       - name: Get latest Linux stable version
+        id: get_latest_version
         run: |
-          latest_version=$(curl -sL "https://www.kernel.org/releases.json" | jq -r '.[] | select(.moniker | contains("linux-stable")) | .version' | head -n 1)
+          latest_version=$(curl -s https://www.kernel.org/releases.json | jq -r '.[0].version')
           echo "::set-output name=latest_version::$latest_version"
 
-      - name: Compare versions
-        id: compare_versions
+      - name: Check if update is needed
+        id: check_update
         run: |
-          current_version=$(sed -n 's/VERSION = "\(.*\)"/\1/p' Makefile)
-          latest_version=${{ steps.compare_versions.outputs.latest_version }}
-
+          current_version=$(awk -F'"' '/VERSION =/ {print $2}' Makefile)
+          latest_version=${{ steps.get_latest_version.outputs.latest_version }}
           if [[ "$current_version" == "$latest_version" ]]; then
             echo "No update available. Current version: $current_version"
             echo "::set-output name=update_available::false"
@@ -34,12 +36,19 @@ jobs:
             echo "::set-output name=update_available::true"
           fi
 
-      - name: Update repository
-        if: steps.compare_versions.outputs.update_available == 'true'
-        uses: donvito007/update-repo-action@v1
-        with:
-          repository: donvito007/KernelSU_Thyme_SoundBeast
-          branch: main  # Replace with your branch name
+      - name: Update kernel source
+        if: steps.check_update.outputs.update_available == 'true'
+        run: |
+          git fetch origin
+          git checkout main
+          git merge upstream/main
+          git push origin main
 
-        env:
-          GH_TOKEN: ${{ secrets.Local }}
+      - name: Notify update status
+        if: always()
+        run: |
+          if [[ "${{ steps.check_update.outputs.update_available }}" == 'true' ]]; then
+            echo "Kernel source has been updated to the latest version."
+          else
+            echo "No updates are available. Kernel source is already up-to-date."
+          fi
